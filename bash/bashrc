@@ -131,3 +131,6 @@ export PATH=/home/charles/.opencode/bin:$PATH
 for file in ~/dotfiles/shell/*.sh; do
   source "$file"
 done
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
