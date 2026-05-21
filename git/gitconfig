@@ -1,0 +1,60 @@
+[user]
+  name = Charles Nykamp
+  # email is intentionally NOT here (comes from gitconfig.local)
+
+[core]
+  editor = codium --wait
+  autocrlf = input
+  excludesfile = ~/.gitignore_global
+
+[pull]
+  rebase = true
+
+[push]
+  autoSetupRemote = true
+  default = simple
+
+[fetch]
+  prune = true
+
+[init]
+	defaultBranch = main
+
+[diff]
+  tool = vscode
+
+[difftool "vscode"]
+  cmd = codium --wait --diff $LOCAL $REMOTE
+
+[merge]
+  tool = vscode
+
+[mergetool "vscode"]
+  cmd = codium --wait $MERGED
+
+[rebase]
+  autoStash = true
+
+[rerere]
+  enabled = true
+
+[color]
+  ui = auto
+
+[alias]
+  st = status
+  co = checkout
+  br = branch
+  lg = log --oneline --graph --decorate --all
+  last = log -1 HEAD
+  unstage = reset HEAD --
+  amend = commit --amend --no-edit
+
+[help]
+  autocorrect = 1
+
+[credential "https://github.com"]
+  helper = !gh auth git-credential
+
+[include]
+	path = ~/.gitconfig.local
