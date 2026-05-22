@@ -1,3 +1,82 @@
+wtmain() {
+  local main
+  main=$(git worktree list 2>/dev/null | head -1 | awk '{print $1}')
+  if [ -z "$main" ]; then
+    echo "error: not inside a git repository"
+    return 1
+  fi
+  cd "$main"
+}
+
+wts() {
+  local list
+  list=$(git worktree list 2>/dev/null)
+  if [ -z "$list" ]; then
+    echo "error: not inside a git repository"
+    return 1
+  fi
+
+  local selected
+  if command -v fzf &>/dev/null; then
+    selected=$(echo "$list" | fzf --prompt="worktree> " | awk '{print $1}')
+  else
+    echo "$list"
+    return 0
+  fi
+
+  if [ -n "$selected" ]; then
+    cd "$selected"
+    claude --continue
+  fi
+}
+
+wtprune() {
+  if ! command -v gh &>/dev/null; then
+    echo "error: gh CLI required"
+    return 1
+  fi
+
+  local main
+  main=$(git worktree list 2>/dev/null | head -1 | awk '{print $1}')
+  if [ -z "$main" ]; then
+    echo "error: not inside a git repository"
+    return 1
+  fi
+
+  git worktree list | tail -n +2 | while read -r line; do
+    local path branch state
+    path=$(echo "$line" | awk '{print $1}')
+    branch=$(echo "$line" | grep -o '\[.*\]' | tr -d '[]')
+
+    if [ -z "$branch" ]; then
+      echo "skipping $path — no branch (detached HEAD?)"
+      continue
+    fi
+
+    state=$(gh pr view "$branch" --json state --jq '.state' 2>/dev/null)
+    if [ "$state" != "MERGED" ]; then
+      echo "skipping $branch — ${state:-no PR found}"
+      continue
+    fi
+
+    if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
+      echo "skipping $branch — uncommitted changes"
+      continue
+    fi
+
+    if [ -n "$(git -C "$main" log "$branch" --not --remotes --oneline 2>/dev/null)" ]; then
+      echo "skipping $branch — unpushed commits"
+      continue
+    fi
+
+    # All checks passed — move to main repo so we're not inside the worktree being removed
+    cd "$main" || return 1
+
+    echo "pruning $branch — PR merged"
+    git worktree remove "$path" && git branch -D "$branch"
+  done
+}
+
 wt() {
   local task="$1"
 
@@ -23,7 +102,7 @@ wt() {
 
   local WT_ROOT="$REPO_PARENT/.worktrees/${REPO_NAME}"
   local WT_PATH="$WT_ROOT/$task"
-  local BRANCH="ai/$task"
+  local BRANCH="$task"
 
 
   if [ -d "$WT_PATH" ]; then
@@ -54,6 +133,11 @@ wt() {
   echo "  branch: $BRANCH"
   echo ""
 
-  codium -n "$WT_PATH"
+  # codium -n "$WT_PATH"
   cd "$WT_PATH"
+
+  if [ -f "$WT_PATH/package.json" ]; then
+    npm install
+  fi
+  claude
 }
