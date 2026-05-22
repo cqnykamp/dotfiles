@@ -78,10 +78,19 @@ wtprune() {
 }
 
 wt() {
-  local task="$1"
+  local type="$1"
+  local task="$2"
 
-  if [ -z "$task" ]; then
-    echo "usage: wt <task-name>"
+  local valid_types="feat feat! fix chore refactor docs test ci"
+  if [ -z "$type" ] || [ -z "$task" ]; then
+    echo "usage: wt <type> <task-name>"
+    echo "types: $valid_types"
+    return 1
+  fi
+
+  if ! echo "$valid_types" | grep -qw "$type"; then
+    echo "error: unknown type '$type'"
+    echo "types: $valid_types"
     return 1
   fi
 
@@ -101,8 +110,8 @@ wt() {
   REPO_PARENT=$(dirname "$REPO_ROOT")
 
   local WT_ROOT="$REPO_PARENT/.worktrees/${REPO_NAME}"
-  local WT_PATH="$WT_ROOT/$task"
-  local BRANCH="$task"
+  local WT_PATH="$WT_ROOT/$type/$task"
+  local BRANCH="$type/$task"
 
 
   if [ -d "$WT_PATH" ]; then
@@ -110,7 +119,7 @@ wt() {
     return 1
   fi
 
-  mkdir -p "$WT_ROOT"
+  mkdir -p "$WT_ROOT/$type"
 
   echo "== repo detected =="
   echo "root:   $REPO_ROOT"
@@ -139,5 +148,5 @@ wt() {
   if [ -f "$WT_PATH/package.json" ]; then
     npm install
   fi
-  claude
+  claude "PR type for this branch: $type"
 }
