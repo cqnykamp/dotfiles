@@ -43,6 +43,24 @@ wtprune() {
     return 1
   fi
 
+  # Resolve which GitHub repo to query — prefer upstream over origin
+  local pr_repo pr_owner pr_name
+  local upstream_url origin_url
+  upstream_url=$(git -C "$main" remote get-url upstream 2>/dev/null)
+  origin_url=$(git -C "$main" remote get-url origin 2>/dev/null)
+  for _url in "$upstream_url" "$origin_url"; do
+    if echo "$_url" | grep -q "github\.com"; then
+      pr_repo=$(echo "$_url" | sed -E 's|.*github\.com[:/]||' | sed 's|\.git$||')
+      break
+    fi
+  done
+  if [ -z "$pr_repo" ]; then
+    echo "error: no GitHub remote found"
+    return 1
+  fi
+  pr_owner=$(echo "$pr_repo" | cut -d/ -f1)
+  pr_name=$(echo "$pr_repo" | cut -d/ -f2)
+
   git worktree list | tail -n +2 | while read -r line; do
     local path branch state
     path=$(echo "$line" | awk '{print $1}')
@@ -53,8 +71,16 @@ wtprune() {
       continue
     fi
 
-    state=$(gh pr view "$branch" --json state --jq '.state' 2>/dev/null)
-    if [ "$state" != "MERGED" ]; then
+    # Use GraphQL — gh pr view and --head filter both fail for cross-fork merged PRs
+    state=$(gh api graphql -f query="{
+      repository(owner: \"$pr_owner\", name: \"$pr_name\") {
+        pullRequests(last: 1, headRefName: \"$branch\") {
+          nodes { state }
+        }
+      }
+    }" --jq '.data.repository.pullRequests.nodes[0].state' 2>/dev/null)
+
+    if [ "$state" != "MERGED" ] && [ "$state" != "CLOSED" ]; then
       echo "skipping $branch — ${state:-no PR found}"
       continue
     fi
@@ -72,7 +98,7 @@ wtprune() {
     # All checks passed — move to main repo so we're not inside the worktree being removed
     cd "$main" || return 1
 
-    echo "pruning $branch — PR merged"
+    echo "pruning $branch — PR $state"
     git worktree remove "$path" && git branch -D "$branch"
   done
 }
@@ -148,5 +174,6 @@ wt() {
   if [ -f "$WT_PATH/package.json" ]; then
     npm install
   fi
-  claude "PR type for this branch: $type"
+  claude
+  # claude "PR type for this branch: $type"
 }

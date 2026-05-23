@@ -127,6 +127,10 @@ export PATH=/home/charles/.opencode/bin:$PATH
 . "$HOME/.local/bin/env"
 
 
+# tilix
+if [ $TILIX_ID ] || [ $VTE_VERSION ]; then source /etc/profile.d/vte.sh; fi
+
+
 # Custom shell commands
 for file in ~/dotfiles/shell/*.sh; do
   source "$file"
