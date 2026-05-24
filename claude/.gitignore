@@ -1,0 +1,25 @@
+# Sensitive credentials - never track
+.credentials.json
+
+# Conversation and session data
+history.jsonl
+projects/
+sessions/
+
+# Daemon and runtime state
+daemon*
+*.lock
+*.log
+*.status.json
+.last-cleanup
+
+# Ephemeral caches and data
+backups/
+cache/
+downloads/
+file-history/
+jobs/
+paste-cache/
+session-env/
+shell-snapshots/
+tasks/
