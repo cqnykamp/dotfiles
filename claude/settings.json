@@ -1,0 +1,15 @@
+{
+  "sandbox": {
+    "failIfUnavailable": true
+  },
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "theme": "dark",
+  "voiceEnabled": true,
+  "statusLine": {
+    "type": "command",
+    "command": "bash /home/charles/.claude/statusline-command.sh"
+  }
+}
