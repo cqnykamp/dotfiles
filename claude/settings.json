@@ -1,11 +1,23 @@
 {
   "sandbox": {
-    "failIfUnavailable": true
+    "failIfUnavailable": true,
+    "filesystem": {
+      "allowWrite": [
+        "/dev/shm",
+        "/home/charles/.cache/Cypress",
+        "/home/charles/.config/Cypress",
+        "/run/user/1000"
+      ]
+    },
+    "network": {
+      "allowAllUnixSockets": true
+    }
   },
   "voice": {
     "enabled": true,
     "mode": "hold"
   },
+  "model": "claude-opus-4-7",
   "theme": "dark",
   "voiceEnabled": true,
   "statusLine": {

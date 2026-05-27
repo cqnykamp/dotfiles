@@ -5,6 +5,7 @@
 history.jsonl
 projects/
 sessions/
+plans/
 
 # Daemon and runtime state
 daemon*
